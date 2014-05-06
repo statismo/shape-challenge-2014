@@ -15,6 +15,7 @@
 #include <iostream>
 #include <string>
 #include <list>
+#include "logger.h"
 
 typedef std::list<std::string> FileList;
 typedef itk::ImageFileReader<BinaryImageType> ImageReaderType;
@@ -62,7 +63,6 @@ void writeResult(const char* resultfile, unsigned objId, const char* modelFn, co
 }
 
 
-
 int main(int argc, char* argv[]) {
 
 	if (argc < 6) { 
@@ -76,44 +76,46 @@ int main(int argc, char* argv[]) {
 	char* resultfile = argv[4]; 
 	char* logfile = argv[5];
 
+	try { 
 
-	GeneralizationResult gdummy(0.1, 1.2);
-	writeResult(resultfile, objId, modelFn, gdummy, 0.1, 0.1);
-	// 
-	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	// TODO remove me
-	/////////////////////////////////
-	exit(0);
+		Logger logger(logfile, logDEBUG);
+	
+		FileList testfiles = getTestImagesInDir(testdatadir);
+		TestImageList testImages;
+		
+		for (FileList::const_iterator it = testfiles.begin(); it != testfiles.end(); ++it) { 
 
+			ImageReaderType::Pointer reader = ImageReaderType::New();
+			reader->SetFileName(std::string(testdatadir) +"/" + *it);
+			reader->Update();
+			logger.Get(logINFO) << "reading image " << reader->GetFileName() << std::endl; 
 
-	FileList testfiles = getTestImagesInDir(testdatadir);
-	TestImageList testImages;
+			BinaryImageType::Pointer testImage = reader->GetOutput();
+			testImages.push_back(testImage);
+		}
 
-	for (FileList::const_iterator it = testfiles.begin(); it != testfiles.end(); ++it) { 
-		std::cout << "reading image "<< *it << std::endl;
+		logger.Get(logINFO) << "Reading statistical model " << modelFn << std::endl;
 
-		ImageReaderType::Pointer reader = ImageReaderType::New();
-		reader->SetFileName(std::string(testdatadir) +"/" + *it);
-		reader->Update();
-		BinaryImageType::Pointer testImage = reader->GetOutput();
-		testImages.push_back(testImage);
-	}
+		RepresenterType::Pointer representer = RepresenterType::New();
+		StatisticalModelType::Pointer model = StatisticalModelType::New();
+		model->Load(representer, modelFn);
 
+		GeneralizationResult generalizationScore = generalization(model, testImages);
+		logger.Get(logINFO) << "generalizationScore: avg = " << generalizationScore.averageDistance << " hd = " << generalizationScore.hausdorffDistance << std::endl;
 
-    RepresenterType::Pointer representer = RepresenterType::New();
-    StatisticalModelType::Pointer model = StatisticalModelType::New();
-    model->Load(representer, modelFn);
-
-	GeneralizationResult generalizationScore = generalization(model, testImages);
-	std::cout << "generalizationScore: avg = " << generalizationScore.averageDistance << " hd = " << generalizationScore.hausdorffDistance << std::endl;
-
-    float specificityValue = specificity(model, 1000);
-    std::cout << "specificity value: " << specificityValue << std::endl;
+		float specificityValue = specificity(model, 1000);
+		logger.Get(logINFO) << "specificity value: " << specificityValue << std::endl;
     
-	float compactnessScore = compactness(model);
-    std::cout << "compactness score: " << compactnessScore  << std::endl;
+		float compactnessScore = compactness(model);
+		logger.Get(logINFO) << "compactness score: " << compactnessScore  << std::endl;
+
+		writeResult(resultfile, objId, modelFn, generalizationScore, specificityValue, compactnessScore);
 
 
+	} catch (std::exception& e) { 
+		std::cerr << "An error occurred : " << e.what() << std::endl;
+		return -1;
+	}
 
     return 0;
 }

@@ -13,7 +13,7 @@
 #include "Representers/ITK/itkStandardMeshRepresenter.h"
 #include "itkImage.h"
 #include "itkMesh.h"
-
+#include "logger.h"
 
 // Common definitions
 const unsigned Dimensions = 3;
@@ -44,6 +44,5 @@ double computeAverageDistance(BinaryImageType::Pointer image1, BinaryImageType::
 double computeHausdorffDistance(BinaryImageType::Pointer image1, BinaryImageType::Pointer image2);
 BinaryImageType::Pointer meshToBinaryImage(MeshType::Pointer mesh, BinaryImageType::Pointer infoImage = 0);
 DistanceImageType::Pointer binaryImageToDistanceImage(BinaryImageType::Pointer binaryImage);
-
 
 #endif 
