@@ -36,15 +36,55 @@ FileList getTestImagesInDir (std::string dir)
 }
 
 
+void writeResult(const char* resultfile, unsigned objId, const char* modelFn, const GeneralizationResult& gndummy, float specificity, float compactness) { 
+	std::ofstream resFile(resultfile);
+
+	// TODO error handling
+	if (!resFile) { 
+		std::ostringstream msgos;
+		msgos << "cannot create output file " << resultfile;
+		throw std::exception(msgos.str().c_str());	
+	}
+
+	resFile << "{" << std::endl;
+	resFile << "\"object-id\" : " << objId << "," << std::endl;
+	resFile << "\"shape-model\" : " << "\"" << modelFn << "\"" << "," << std::endl;
+	resFile << "\"error-code\" : " << 0 << "," << std::endl;
+	resFile << "\"error-message\" : " << "\"\"" << "," << std::endl;
+	resFile << "\"generalization\" : {" << std::endl;
+	resFile << "\t\"average-distance\" : " << gndummy.averageDistance << "," << std::endl;
+	resFile << "\t\"hausdorff-distance\" : " << gndummy.hausdorffDistance <<  std::endl;
+	resFile << "}," << std::endl;
+	resFile << "\"specificity\" : " << specificity << "," << std::endl;
+	resFile << "\"compactness\" : " << compactness << std::endl;
+	resFile << "}" << std::endl;
+	resFile.close();
+}
+
+
+
 int main(int argc, char* argv[]) {
 
-	if (argc < 3) { 
-		std::cout << "usage: shapeModelValidation shapemodel testdatadir" << std::endl;
+	if (argc < 6) { 
+		std::cout << "usage: shapeModelValidation obj-id shapemodel testdatadir resultfile logfile" << std::endl;
 		return -1;
 	}
 
-	char* modelFn = argv[1];
-	char* testdatadir = argv[2];
+	unsigned int objId = static_cast<unsigned>(atoi(argv[1]));
+	char* modelFn = argv[2];
+	char* testdatadir = argv[3];
+	char* resultfile = argv[4]; 
+	char* logfile = argv[5];
+
+
+	GeneralizationResult gdummy(0.1, 1.2);
+	writeResult(resultfile, objId, modelFn, gdummy, 0.1, 0.1);
+	// 
+	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+	// TODO remove me
+	/////////////////////////////////
+	exit(0);
+
 
 	FileList testfiles = getTestImagesInDir(testdatadir);
 	TestImageList testImages;
