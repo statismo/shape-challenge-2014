@@ -15,6 +15,7 @@
 #include "itkMesh.h"
 #include "logger.h"
 
+
 // Common definitions
 const unsigned Dimensions = 3;
 typedef itk::Mesh<float, Dimensions > MeshType;
@@ -24,7 +25,7 @@ typedef itk::StatisticalModel<MeshType> StatisticalModelType;
 typedef itk::Image<unsigned char, 3> BinaryImageType;
 typedef itk::Image<float, 3> DistanceImageType;
 typedef std::list<BinaryImageType::Pointer> TestImageList;
-
+typedef std::list<std::string> FileList;
 
 // holds the result for the two generalization metrics
 struct GeneralizationResult { 
@@ -35,14 +36,16 @@ struct GeneralizationResult {
 };
 
 // the main validation functions
-GeneralizationResult generalization(StatisticalModelType::Pointer model, const TestImageList& testImages);
-float specificity(StatisticalModelType::Pointer model, unsigned numberOfShapes);
-float compactness(StatisticalModelType::Pointer model);
+GeneralizationResult generalization(Logger& logger, StatisticalModelType::Pointer model, const TestImageList& testImages);
+float specificity(Logger& logger, StatisticalModelType::Pointer model, unsigned numberOfShapes);
+float compactness(Logger& logger, StatisticalModelType::Pointer model);
 
 // some commonly used helper functions
 double computeAverageDistance(BinaryImageType::Pointer image1, BinaryImageType::Pointer image2);
 double computeHausdorffDistance(BinaryImageType::Pointer image1, BinaryImageType::Pointer image2);
 BinaryImageType::Pointer meshToBinaryImage(MeshType::Pointer mesh, BinaryImageType::Pointer infoImage = 0);
 DistanceImageType::Pointer binaryImageToDistanceImage(BinaryImageType::Pointer binaryImage);
+FileList getTestImagesInDir (std::string dir);
+BinaryImageType::Pointer readBinaryImage(const std::string& filename);
 
 #endif 

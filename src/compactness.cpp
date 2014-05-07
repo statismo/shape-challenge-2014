@@ -14,6 +14,6 @@
 
 // the simplest compactness measure is simply the number of parameters of the model .
 
-float compactness(StatisticalModelType::Pointer model) {
+float compactness(Logger& logger, StatisticalModelType::Pointer model) {
      return model->GetNumberOfPrincipalComponents();
 }

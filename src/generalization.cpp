@@ -32,10 +32,10 @@
 #include "itkResampleImageFilter.h"
 #include "itkNearestNeighborInterpolateImageFunction.h"
 
-MeshType::Pointer fitModelToTestImage(StatisticalModelType::Pointer model, BinaryImageType::Pointer testImage);
+MeshType::Pointer fitModelToTestImage(Logger& logger, StatisticalModelType::Pointer model, BinaryImageType::Pointer testImage);
 
 
-GeneralizationResult generalization(StatisticalModelType::Pointer model, const TestImageList& testImages) {
+GeneralizationResult generalization(Logger& logger, StatisticalModelType::Pointer model, const TestImageList& testImages) {
 
 	double totalAvgDistance = 0;
 	double totalHdDistance = 0;
@@ -43,7 +43,7 @@ GeneralizationResult generalization(StatisticalModelType::Pointer model, const T
 
 	for (TestImageList::const_iterator it = testImages.begin(); it != testImages.end(); ++it) { 
 		BinaryImageType::Pointer testImage = *it;
-		MeshType::Pointer fittedMesh = fitModelToTestImage(model, testImage);
+        MeshType::Pointer fittedMesh = fitModelToTestImage(logger, model, testImage);
 
 		BinaryImageType::Pointer fittingResultAsImage = meshToBinaryImage(fittedMesh);
 		
@@ -112,6 +112,9 @@ public:
 
   itkNewMacro( Self );
 
+
+   void SetLogger(Logger& logger) { m_logger = &logger; }
+
    void Execute(itk::Object *caller, const itk::EventObject & event)
   {
     Execute( (const itk::Object *)caller, event);
@@ -126,23 +129,26 @@ public:
       return;
     }
 
-	std::cout << "Iteration: " << ++m_iter_no << "  value " <<  optimizer->GetCachedValue() << std::endl; //<< "model arameters " << optimizer->GetCachedCurrentPosition() << std::endl;
+    if (m_logger != 0) {
+        m_logger->Get(logINFO) << "Iteration: " << ++m_iter_no << "  value " <<  optimizer->GetCachedValue() << std::endl; //<< "model arameters " << optimizer->GetCachedCurrentPosition() << std::endl;
+    }
   }
 
 
 protected:
   IterationStatusObserver():
-     m_iter_no(0) {};
+     m_iter_no(0), m_logger(0) {};
 
   virtual ~IterationStatusObserver(){};
 
 private:
   int m_iter_no;
+  Logger* m_logger;
 
 };
 
 
-MeshType::Pointer fitModelToTestImage(StatisticalModelType::Pointer model, BinaryImageType::Pointer testImage) 
+MeshType::Pointer fitModelToTestImage(Logger& logger, StatisticalModelType::Pointer model, BinaryImageType::Pointer testImage)
 {
 	const unsigned Dimensions = 3;
 	typedef itk::PointSet<float, Dimensions > PointSetType;
@@ -205,6 +211,7 @@ MeshType::Pointer fitModelToTestImage(StatisticalModelType::Pointer model, Binar
 	// set up the observer to keep track of the progress
 	typedef IterationStatusObserver ObserverType;
 	ObserverType::Pointer observer = ObserverType::New();
+    observer->SetLogger(logger);
 	optimizer->AddObserver( itk::IterationEvent(), observer );
 
 	// set up the metric and interpolators
@@ -237,10 +244,10 @@ MeshType::Pointer fitModelToTestImage(StatisticalModelType::Pointer model, Binar
 	registration->SetMovingImage(targetDistanceImage);
 
 	try {
-		std::cout << "starting model fitting" << std::endl;
+        logger.Get(logINFO) << "starting model fitting" << std::endl;
 		registration->Update();
 	} catch ( itk::ExceptionObject& o ) {
-		std::cout << "caught exception " << o << std::endl;
+        logger.Get(logINFO) << "caught exception " << o << std::endl;
 	}
 
 

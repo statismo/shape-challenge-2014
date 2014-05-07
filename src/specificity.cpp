@@ -19,11 +19,15 @@ typedef itk::LinearInterpolateImageFunction<DistanceImageType> InterpolatorType;
 
 double l2DistToTrainingImage(DistanceImageType::Pointer trainingDistImage, MeshType::Pointer sample);
 
-float specificity(StatisticalModelType::Pointer model, unsigned numberOfShapes) {
+float specificity(Logger& logger, StatisticalModelType::Pointer model, unsigned numberOfShapes) {
 
     // get the training meshes (that need to be provided in the scores   
     statismo::MatrixType S = model->GetModelInfo().GetScoresMatrix(); 
 	vnl_matrix<float> scores = vnl_matrix<float>(S.data(), S.rows(), S.cols());
+
+    if (scores.cols() == 0 || scores.rows() != model->GetNumberOfPrincipalComponents()) {
+        throw std::runtime_error("An invalid scores matrix was provided");
+    }
 
     typedef std::vector<DistanceImageType::Pointer> TrainingSamplesType;
     TrainingSamplesType trainingSamples;
@@ -36,7 +40,7 @@ float specificity(StatisticalModelType::Pointer model, unsigned numberOfShapes) 
 		DistanceImageType::Pointer trainingSampleAsDistImage = binaryImageToDistanceImage(trainingSampleAsImage);
         trainingSamples.push_back(trainingSampleAsDistImage);
 
-		std::cout << "created distance image " << i << std::endl;
+        logger.Get(logINFO) << "created distance image " << i << std::endl;
     }
 
 	// draw a number of samples and compute its distance to the closest training dataset
@@ -50,12 +54,12 @@ float specificity(StatisticalModelType::Pointer model, unsigned numberOfShapes) 
                 minDist = dist;
             }
         }
-		std::cout << "closest distance for sample " << i << ": " << minDist << std::endl;
+        logger.Get(logINFO) << "closest distance for sample " << i << ": " << minDist << std::endl;
 
         accumulatedDistToClosestTrainingShape += minDist;
     }
     double avgDist = accumulatedDistToClosestTrainingShape / numberOfShapes;
-	std::cout << "average distance " << avgDist << std::endl;
+    logger.Get(logINFO) << "average distance " << avgDist << std::endl;
     return avgDist;
 }
 
