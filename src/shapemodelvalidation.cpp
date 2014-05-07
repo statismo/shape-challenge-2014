@@ -44,7 +44,7 @@ void writeResult(const char* resultfile, unsigned objId, const char* modelFn, co
 	if (!resFile) { 
 		std::ostringstream msgos;
 		msgos << "cannot create output file " << resultfile;
-		throw std::exception(msgos.str().c_str());	
+        throw std::runtime_error(msgos.str().c_str());
 	}
 
 	resFile << "{" << std::endl;

@@ -13,7 +13,7 @@ public:
 		if (!m_os) { 
 			std::ostringstream omsg;
 			omsg << "could not open logging file with name " << filename;
-			throw std::exception(omsg.str().c_str());
+            throw std::runtime_error(omsg.str().c_str());
 		}
 	}
 
