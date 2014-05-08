@@ -9,6 +9,7 @@
 
 
 #include "shapemodelvalidation.h"
+#include "config.h"
 #include <iostream>
 #include <string>
 #include <list>
@@ -49,7 +50,7 @@ int main(int argc, char* argv[]) {
         GeneralizationResult generalizationScore = generalization(logger, model, testImages);
 		logger.Get(logINFO) << "generalizationScore: avg = " << generalizationScore.averageDistance << " hd = " << generalizationScore.hausdorffDistance << std::endl;
 
-        float specificityValue = specificity(logger, model, 1000);
+        float specificityValue = specificity(logger, model, ConfigParameters::numSamplesForSpecificityComputations);
 		logger.Get(logINFO) << "specificity value: " << specificityValue << std::endl;
     
         float compactnessScore = compactness(logger, model);

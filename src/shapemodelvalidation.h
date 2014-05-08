@@ -41,9 +41,11 @@ float specificity(Logger& logger, StatisticalModelType::Pointer model, unsigned 
 float compactness(Logger& logger, StatisticalModelType::Pointer model);
 
 // some commonly used helper functions
-double computeAverageDistance(BinaryImageType::Pointer image1, BinaryImageType::Pointer image2);
-double computeHausdorffDistance(BinaryImageType::Pointer image1, BinaryImageType::Pointer image2);
-BinaryImageType::Pointer meshToBinaryImage(MeshType::Pointer mesh, BinaryImageType::Pointer infoImage = 0);
+double computeAverageDistance(MeshType::Pointer mesh1, MeshType::Pointer mesh2, unsigned numberOfSamplingPoints);
+double computeSymmetricAverageDistance(MeshType::Pointer mesh1, MeshType::Pointer mesh2, unsigned numberOfSamplingPoints);
+double computeHausdorffDistance(MeshType::Pointer mesh1, MeshType::Pointer mesh2, unsigned numberOfSamplingPoints);
+BinaryImageType::Pointer meshToBinaryImage(MeshType::Pointer mesh, unsigned imageResolution, double imageMargin);
+MeshType::Pointer binaryImageToMesh(BinaryImageType* testImage);
 DistanceImageType::Pointer binaryImageToDistanceImage(BinaryImageType::Pointer binaryImage);
 FileList getTestImagesInDir (std::string dir);
 BinaryImageType::Pointer readBinaryImage(const std::string& filename);

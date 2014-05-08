@@ -35,6 +35,7 @@
 MeshType::Pointer fitModelToTestImage(Logger& logger, StatisticalModelType::Pointer model, BinaryImageType::Pointer testImage);
 
 
+
 GeneralizationResult generalization(Logger& logger, StatisticalModelType::Pointer model, const TestImageList& testImages) {
 
 	double totalAvgDistance = 0;
@@ -44,11 +45,15 @@ GeneralizationResult generalization(Logger& logger, StatisticalModelType::Pointe
 	for (TestImageList::const_iterator it = testImages.begin(); it != testImages.end(); ++it) { 
 		BinaryImageType::Pointer testImage = *it;
         MeshType::Pointer fittedMesh = fitModelToTestImage(logger, model, testImage);
-
-		BinaryImageType::Pointer fittingResultAsImage = meshToBinaryImage(fittedMesh);
 		
-		totalAvgDistance += computeAverageDistance(testImage, fittingResultAsImage);
-		totalHdDistance += computeHausdorffDistance(testImage, fittingResultAsImage);
+        MeshType::Pointer testMesh = binaryImageToMesh(testImage);
+        double avgDistance = computeSymmetricAverageDistance(testMesh,  fittedMesh, ConfigParameters::numSamplingPointsGeneralization);
+        totalAvgDistance += avgDistance;
+        double hdDistance = computeHausdorffDistance(testMesh, fittedMesh, ConfigParameters::numSamplingPointsGeneralization);
+        totalHdDistance += hdDistance;
+
+        logger.Get(logINFO) << "avg distance " << avgDistance << std::endl;
+        logger.Get(logINFO) << "hd distance " << hdDistance << std::endl;
 	}
 	return GeneralizationResult(totalAvgDistance / numTestImages, totalHdDistance / numTestImages);
 }
@@ -71,34 +76,6 @@ BinaryImageType::Pointer resizeToImage(BinaryImageType::Pointer refImage, Binary
 	return resampler->GetOutput();
 }
 
-double 
-computeAverageDistance(BinaryImageType::Pointer image1, BinaryImageType::Pointer image2) {
-	typedef itk::ContourMeanDistanceImageFilter<BinaryImageType, BinaryImageType > DistanceImageFilterType;
-
-	BinaryImageType::Pointer resizedImage2 = resizeToImage(image1, image2);
-	DistanceImageFilterType::Pointer avgDistFilter = DistanceImageFilterType::New();
-	avgDistFilter->SetUseImageSpacing(true);
-	avgDistFilter->SetInput1(image1);
-	avgDistFilter->SetInput2(resizedImage2);
-	avgDistFilter->Update();
-	return avgDistFilter->GetMeanDistance();
-}
-
-
-double 
-computeHausdorffDistance(BinaryImageType::Pointer image1, BinaryImageType::Pointer image2) {
-	typedef itk::HausdorffDistanceImageFilter<BinaryImageType, BinaryImageType > HdDistanceImageFilterType;
-
-	BinaryImageType::Pointer resizedImage2 = resizeToImage(image1, image2);
-
-	HdDistanceImageFilterType::Pointer hdDistFilter = HdDistanceImageFilterType::New();
-	hdDistFilter->SetUseImageSpacing(true);
-	hdDistFilter->SetInput1(image1);
-	hdDistFilter->SetInput2(resizedImage2);
-	hdDistFilter->Update();
-	return  hdDistFilter->GetHausdorffDistance();
-	
-}
 
 
 typedef itk::LBFGSOptimizer OptimizerType;
@@ -163,9 +140,13 @@ MeshType::Pointer fitModelToTestImage(Logger& logger, StatisticalModelType::Poin
 	typedef itk::TransformMeshFilter<MeshType, MeshType, CompositeTransformType> TransformMeshFilterType;
 	typedef itk::CenteredTransformInitializer<RigidTransformType, BinaryImageType, BinaryImageType> TransformInitializerType;
 	typedef itk::StatisticalShapeModelTransform<MeshType, double, Dimensions> StatisticalModelTransformType;
-	
+
+
+    double meanImageMargin = 40.0;
+    unsigned meanImageResolution = 256;
+
 	// we compute a binary image of the model mean to use it for initialization of the shape 
-	BinaryImageType::Pointer meanAsBinImage = meshToBinaryImage(model->DrawMean());
+    BinaryImageType::Pointer meanAsBinImage = meshToBinaryImage(model->DrawMean(), meanImageResolution, meanImageMargin);
 
 	RigidTransformType::Pointer rigidTransform = RigidTransformType::New();
 	TransformInitializerType::Pointer initializer = TransformInitializerType::New();

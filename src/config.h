@@ -10,9 +10,11 @@
 #ifndef __CONFIG_H
 #define __CONFIG_H
 
-struct DMConfigParameters { 
-	static const float imageMargin;
-	static const unsigned DistanceImageResolution;
+
+struct ConfigParameters {
+ static const unsigned numSamplesForSpecificityComputations;
+ static const unsigned numSamplingPointsSpecificity;
+ static const unsigned numSamplingPointsGeneralization;
 };
 
 
