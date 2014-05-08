@@ -13,7 +13,7 @@
 #include <string>
 #include <itkLinearInterpolateImageFunction.h>
 #include <itkImage.h>
-
+#include "itkMeshFileWriter.h"
 
 typedef itk::LinearInterpolateImageFunction<DistanceImageType> InterpolatorType;
 
@@ -29,27 +29,26 @@ float specificity(Logger& logger, StatisticalModelType::Pointer model, unsigned 
         throw std::runtime_error("An invalid scores matrix was provided");
     }
 
-    typedef std::vector<DistanceImageType::Pointer> TrainingSamplesType;
+    typedef std::vector<MeshType::Pointer> TrainingSamplesType;
     TrainingSamplesType trainingSamples;
 
 	// create for each training sample a distance image (to speed up distance computations)
     for (unsigned i  = 0; i < scores.cols(); i++) {
         vnl_vector<float> coeffsForIthSample = scores.get_column(i);
         MeshType::Pointer trainingSample = model->DrawSample(coeffsForIthSample);
-		BinaryImageType::Pointer trainingSampleAsImage = meshToBinaryImage(trainingSample);
-		DistanceImageType::Pointer trainingSampleAsDistImage = binaryImageToDistanceImage(trainingSampleAsImage);
-        trainingSamples.push_back(trainingSampleAsDistImage);
-
-        logger.Get(logINFO) << "created distance image " << i << std::endl;
+        trainingSamples.push_back(trainingSample);
     }
 
 	// draw a number of samples and compute its distance to the closest training dataset
     double accumulatedDistToClosestTrainingShape = 0;
     for (unsigned i = 0; i < numberOfShapes; i++) {
         MeshType::Pointer sample = model->DrawSample();
+
         double minDist = std::numeric_limits<double>::max();
         for (TrainingSamplesType::const_iterator it = trainingSamples.begin(); it != trainingSamples.end(); ++it) {
-            double dist = l2DistToTrainingImage(*it, sample);
+            MeshType::Pointer x = sample;
+            double dist = computeAverageDistance(*it, sample, ConfigParameters::numSamplingPointsSpecificity);
+            logger.Get(logINFO) << "distance " << dist << std::endl;
             if (dist < minDist) {
                 minDist = dist;
             }
@@ -63,26 +62,5 @@ float specificity(Logger& logger, StatisticalModelType::Pointer model, unsigned 
     return avgDist;
 }
 
-
-// computes the average euclidean distance of the sample (mesh), to the training dataset, using 
-// the distanceMap representation of the training dataset to speed up computations.  
-double  l2DistToTrainingImage(DistanceImageType::Pointer trainingDistImage, MeshType::Pointer sample) {
-
-    InterpolatorType::Pointer trainingImageInterpolated = InterpolatorType::New();
-    trainingImageInterpolated->SetInputImage(trainingDistImage);
-
-    float accumulatedDist = 0;
-    for (unsigned i = 0; i < sample->GetNumberOfPoints();  i++) {
-		PointType pt = sample->GetPoint(i);
-		float distAtPoint = 0;
-		if (trainingImageInterpolated->IsInsideBuffer(pt)) {
-			distAtPoint = trainingImageInterpolated->Evaluate(pt);
-		} else {
-			distAtPoint = DMConfigParameters::imageMargin;
-		}
-        accumulatedDist += distAtPoint * distAtPoint;
-    }
-    return accumulatedDist / sample->GetNumberOfPoints();
-}
 
 

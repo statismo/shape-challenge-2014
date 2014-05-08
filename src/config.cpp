@@ -9,8 +9,9 @@
 
 #include "config.h"
 
-const float DMConfigParameters::imageMargin = 40.0;
-const unsigned DMConfigParameters::DistanceImageResolution = 256;
+const unsigned ConfigParameters::numSamplesForSpecificityComputations = 500;
+const unsigned ConfigParameters::numSamplingPointsSpecificity = 5000;
+const unsigned ConfigParameters::numSamplingPointsGeneralization = 50000;
 
 const short FittingConfigParameters::maxNumberOfIterations = 100;
 double const FittingConfigParameters::translationScale = 1;
