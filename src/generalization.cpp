@@ -25,7 +25,7 @@
 #include "itkRigid3DTransform.h"
 #include "itkVersorRigid3DTransform.h"
 #include "itkCompositeTransform.h"
-#include "itkCenteredTransformInitializer.h"
+#include "itkCenteredVersorTransformInitializer.h"
 #include "itkHausdorffDistanceImageFilter.h"
 #include "itkContourMeanDistanceImageFilter.h"
 #include "itkIdentityTransform.h"
@@ -42,10 +42,41 @@ GeneralizationResult generalization(Logger& logger, StatisticalModelType::Pointe
 	double totalHdDistance = 0;
 	unsigned numTestImages = testImages.size();
 
-	for (TestImageList::const_iterator it = testImages.begin(); it != testImages.end(); ++it) { 
-		BinaryImageType::Pointer testImage = *it;
+    for (TestImageList::const_iterator it = testImages.begin(); it != testImages.end(); ++it) {
+
+        // The test images should be binary. However, to handle cases where the object value is not 1, we threshold the binary image again
+        typedef itk::BinaryThresholdImageFilter<BinaryImageType, BinaryImageType> BinaryThresholdFilterType;
+        BinaryThresholdFilterType::Pointer threshFilter = BinaryThresholdFilterType::New();
+        threshFilter->SetInput(*it);
+        threshFilter->SetInsideValue(1);
+        threshFilter->SetOutsideValue(0);
+        threshFilter->SetLowerThreshold(1);
+        threshFilter->SetUpperThreshold(255);
+        threshFilter->Update();
+        itk::ImageFileWriter<BinaryImageType>::Pointer w = itk::ImageFileWriter<BinaryImageType>::New();
+        std::ostringstream os;
+        os << "/tmp/images/" << std::distance(it, testImages.begin()) << ".vtk";
+        w->SetFileName(os.str().c_str());
+        w->SetInput(threshFilter->GetOutput());
+        w->Update();
+        BinaryImageType::Pointer testImage = threshFilter->GetOutput();
         MeshType::Pointer fittedMesh = fitModelToTestImage(logger, model, testImage);
-		
+
+        itk::MeshFileWriter<MeshType>::Pointer wm = itk::MeshFileWriter<MeshType>::New();
+        std::ostringstream osm;
+        osm << "/tmp/meshes/" << std::distance(it, testImages.begin()) << ".vtk";
+        wm->SetFileName(osm.str().c_str());
+        wm->SetInput(fittedMesh);
+        wm->Update();
+
+        itk::MeshFileWriter<MeshType>::Pointer wmr = itk::MeshFileWriter<MeshType>::New();
+        std::ostringstream osmr;
+        osmr << "/tmp/meshes/ref.vtk";
+        wmr->SetFileName(osmr.str().c_str());
+        wmr->SetInput(model->GetRepresenter()->GetReference());
+        wmr->Update();
+
+
         MeshType::Pointer testMesh = binaryImageToMesh(testImage);
         double avgDistance = computeSymmetricAverageDistance(testMesh,  fittedMesh, ConfigParameters::numSamplingPointsGeneralization);
         totalAvgDistance += avgDistance;
@@ -138,7 +169,7 @@ MeshType::Pointer fitModelToTestImage(Logger& logger, StatisticalModelType::Poin
 	typedef itk::VersorRigid3DTransform<double> RigidTransformType;
 	typedef itk::CompositeTransform<double, 3> CompositeTransformType;
 	typedef itk::TransformMeshFilter<MeshType, MeshType, CompositeTransformType> TransformMeshFilterType;
-	typedef itk::CenteredTransformInitializer<RigidTransformType, BinaryImageType, BinaryImageType> TransformInitializerType;
+    typedef itk::CenteredVersorTransformInitializer<BinaryImageType, BinaryImageType> TransformInitializerType;
 	typedef itk::StatisticalShapeModelTransform<MeshType, double, Dimensions> StatisticalModelTransformType;
 
 
@@ -150,10 +181,11 @@ MeshType::Pointer fitModelToTestImage(Logger& logger, StatisticalModelType::Poin
 
 	RigidTransformType::Pointer rigidTransform = RigidTransformType::New();
 	TransformInitializerType::Pointer initializer = TransformInitializerType::New();
-	initializer->SetFixedImage(meanAsBinImage);
-	initializer->SetMovingImage(testImage);
+    initializer->SetFixedImage(meanAsBinImage);
+    initializer->SetMovingImage(testImage);
 	initializer->SetTransform(rigidTransform);
-	initializer->InitializeTransform();
+    initializer->MomentsOn();
+    initializer->InitializeTransform();
 
 	StatisticalModelTransformType::Pointer statModelTransform = StatisticalModelTransformType::New();
 	statModelTransform->SetStatisticalModel(model);
@@ -231,11 +263,11 @@ MeshType::Pointer fitModelToTestImage(Logger& logger, StatisticalModelType::Poin
         logger.Get(logINFO) << "caught exception " << o << std::endl;
 	}
 
-
+    std::cout << "transform " << transform << std::endl;
 	TransformMeshFilterType::Pointer transformMeshFilter = TransformMeshFilterType::New();
 	transformMeshFilter->SetInput(model->GetRepresenter()->GetReference());
 	transformMeshFilter->SetTransform(transform);
-	transformMeshFilter->Update();
+    transformMeshFilter->Update();
 	return transformMeshFilter->GetOutput();
 }
 

@@ -35,7 +35,7 @@ FileList getTestImagesInDir (std::string dir)
 
     for (unsigned i = 0; i < directory->GetNumberOfFiles(); i++) {
         std::string filename(directory->GetFile(i));
-        if (filename.find(".vtk") != std::string::npos || filename.find(".mhd") != std::string::npos)
+        if (filename.find(".vtk") != std::string::npos || filename.find(".mha") != std::string::npos)
             files.push_back(filename);
     }
 
@@ -100,6 +100,7 @@ DistanceImageType::Pointer binaryImageToDistanceImage(BinaryImageType::Pointer b
 
 MeshType::Pointer binaryImageToMesh(BinaryImageType* testImage) {
 
+
     typedef itk::BinaryMask3DMeshSource< BinaryImageType, MeshType > MeshSourceType;
     MeshSourceType::Pointer meshSource = MeshSourceType::New();
 
@@ -145,6 +146,8 @@ std::vector<double> computeDistances(MeshType::Pointer mesh1, MeshType::Pointer 
     double totalDist = 0;
     vnl_random randGen;
 
+
+    assert (mesh1->GetNumberOfPoints > 0);
     for (unsigned i = 0; i < numberOfSamplingPoints; i++) {
         unsigned ptId = randGen.lrand32(mesh1->GetNumberOfPoints() - 1);
 
