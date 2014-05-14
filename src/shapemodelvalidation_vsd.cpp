@@ -16,8 +16,23 @@
 #include <iostream>
 #include <string>
 #include <list>
+#include "config.h"
 #include "logger.h"
 
+
+// helper function to replace a part of a string
+std::string replaceAll( const std::string &str, const std::string &search, const std::string &replace ) {
+    std::string s = str;
+	for( size_t pos = 0; ; pos += replace.length() ) {
+        // Locate the substring to replace
+        pos = s.find( search, pos );
+        if( pos == std::string::npos ) break;
+        // Replace by erasing and inserting
+        s.erase( pos, search.length() );
+        s.insert( pos, replace );
+    }
+	return s;
+}
 
 void writeResult(const char* resultfile, unsigned objId, const char* modelFn, unsigned errorCode, const std::string& errorMsg, const GeneralizationResult& gndummy, float specificity, float compactness) {
     std::ofstream resFile(resultfile);
@@ -28,11 +43,12 @@ void writeResult(const char* resultfile, unsigned objId, const char* modelFn, un
         throw std::runtime_error(msgos.str().c_str());
     }
 
+	std::string quotedErrorMsg = replaceAll(replaceAll(replaceAll(errorMsg, "\\", "\\\\"), "/", "//"), "\"", "\\\""); 
     resFile << "{" << std::endl;
     resFile << "\"object-id\" : " << objId << "," << std::endl;
-    resFile << "\"shape-model\" : " << "\"" << modelFn << "\"" << "," << std::endl;
+    //resFile << "\"shape-model\" : " << "\"" << modelFn << "\"" << "," << std::endl;
     resFile << "\"error-code\" : " << errorCode << "," << std::endl;
-    resFile << "\"error-message\" : " << "\"" << errorMsg << "\"" << "," << std::endl;
+	resFile << "\"error-message\" : " << "\"" << quotedErrorMsg << "\"," <<  std::endl;
     resFile << "\"generalization\" : {" << std::endl;
     resFile << "\t\"average-distance\" : " << gndummy.averageDistance << "," << std::endl;
     resFile << "\t\"hausdorff-distance\" : " << gndummy.hausdorffDistance <<  std::endl;
@@ -47,7 +63,7 @@ void writeResult(const char* resultfile, unsigned objId, const char* modelFn, un
 int main(int argc, char* argv[]) {
 
     if (argc < 6) {
-        std::cout << "usage: shapeModelValidation obj-id shapemodel testdatadir resultfile logfile" << std::endl;
+        std::cout << "usage: shapeModelValidation obj-id shapemodel testdatadir resultfile logfile numberOfSpecificityValues" << std::endl;
         return -1;
     }
 
@@ -56,6 +72,15 @@ int main(int argc, char* argv[]) {
     char* testdatadir = argv[3];
     char* resultfile = argv[4];
     char* logfile = argv[5];
+	
+	unsigned numberOfSamplesForSpecificty = 0;
+	if (argc == 7) { 
+		numberOfSamplesForSpecificty = atoi(argv[6]);
+	}
+	else { 
+		numberOfSamplesForSpecificty = ConfigParameters::numSamplesForSpecificityComputations;
+
+	}
 
     try {
 
@@ -80,7 +105,7 @@ int main(int argc, char* argv[]) {
         GeneralizationResult generalizationScore = generalization(logger, model, testImages);
         logger.Get(logINFO) << "generalizationScore: avg = " << generalizationScore.averageDistance << " hd = " << generalizationScore.hausdorffDistance << std::endl;
 
-        float specificityValue = specificity(logger, model, 1000);
+        float specificityValue = specificity(logger, model, numberOfSamplesForSpecificty);
         logger.Get(logINFO) << "specificity value: " << specificityValue << std::endl;
 
         float compactnessScore = compactness(logger, model);

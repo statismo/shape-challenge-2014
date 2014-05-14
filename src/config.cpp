@@ -9,8 +9,8 @@
 
 #include "config.h"
 
-const unsigned ConfigParameters::numSamplesForSpecificityComputations = 500;
-const unsigned ConfigParameters::numSamplingPointsSpecificity = 5000;
+const unsigned ConfigParameters::numSamplesForSpecificityComputations = 100;
+const unsigned ConfigParameters::numSamplingPointsSpecificity = 500;
 const unsigned ConfigParameters::numSamplingPointsGeneralization = 50000;
 
 const short FittingConfigParameters::maxNumberOfIterations = 100;

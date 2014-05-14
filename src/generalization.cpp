@@ -54,27 +54,27 @@ GeneralizationResult generalization(Logger& logger, StatisticalModelType::Pointe
         threshFilter->SetUpperThreshold(255);
         threshFilter->Update();
         itk::ImageFileWriter<BinaryImageType>::Pointer w = itk::ImageFileWriter<BinaryImageType>::New();
-        std::ostringstream os;
-        os << "/tmp/images/" << std::distance(it, testImages.begin()) << ".vtk";
-        w->SetFileName(os.str().c_str());
-        w->SetInput(threshFilter->GetOutput());
-        w->Update();
+        //std::ostringstream os;
+        //os << "/tmp/images/" << std::distance(it, testImages.begin()) << ".vtk";
+        //w->SetFileName(os.str().c_str());
+        //w->SetInput(threshFilter->GetOutput());
+        //w->Update();
         BinaryImageType::Pointer testImage = threshFilter->GetOutput();
         MeshType::Pointer fittedMesh = fitModelToTestImage(logger, model, testImage);
 
-        itk::MeshFileWriter<MeshType>::Pointer wm = itk::MeshFileWriter<MeshType>::New();
-        std::ostringstream osm;
-        osm << "/tmp/meshes/" << std::distance(it, testImages.begin()) << ".vtk";
-        wm->SetFileName(osm.str().c_str());
-        wm->SetInput(fittedMesh);
-        wm->Update();
+        //itk::MeshFileWriter<MeshType>::Pointer wm = itk::MeshFileWriter<MeshType>::New();
+        //std::ostringstream osm;
+        //osm << "/tmp/meshes/" << std::distance(it, testImages.begin()) << ".vtk";
+        //wm->SetFileName(osm.str().c_str());
+        //wm->SetInput(fittedMesh);
+        //wm->Update();
 
-        itk::MeshFileWriter<MeshType>::Pointer wmr = itk::MeshFileWriter<MeshType>::New();
-        std::ostringstream osmr;
-        osmr << "/tmp/meshes/ref.vtk";
-        wmr->SetFileName(osmr.str().c_str());
-        wmr->SetInput(model->GetRepresenter()->GetReference());
-        wmr->Update();
+        //itk::MeshFileWriter<MeshType>::Pointer wmr = itk::MeshFileWriter<MeshType>::New();
+        //std::ostringstream osmr;
+        //osmr << "/tmp/meshes/ref.vtk";
+        //wmr->SetFileName(osmr.str().c_str());
+        //wmr->SetInput(model->GetRepresenter()->GetReference());
+        //wmr->Update();
 
 
         MeshType::Pointer testMesh = binaryImageToMesh(testImage);
