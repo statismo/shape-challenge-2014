@@ -26,8 +26,8 @@ SET (SOURCE_FILES_VSD
         ${SOURCE_FILES_COMMON}
 )
 
+include_directories(${STATISMO_INCLUDE_DIRS} ${ITK_INCLUDE_DIRS}/itkhdf5 ${ITK_INCLUDE_DIRS}/itkhdf5/cpp ${ITK_INCLUDE_DIRS})
 
-include_directories(${STATISMO_INCLUDE_DIRS} ${ITK_INCLUDE_DIRS})
 link_directories( ${ITK_LIBRARY_DIRS})
 
 add_executable (shapemodelValidation ${SOURCE_FILES_CONSOLE})
