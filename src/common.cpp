@@ -12,8 +12,11 @@
 
 #include <itkSignedMaurerDistanceMapImageFilter.h>
 #include <itkImageFileReader.h>
+#include <itkImageFileWriter.h>
+#include <itkMeshFileWriter.h>
 #include <itkDirectory.h>
 #include <itkBinaryMask3DMeshSource.h>
+#include <itkBinaryThresholdImageFilter.h>
 #include <itkTriangleMeshToBinaryImageFilter.h>
 #include <itkPointsLocator.h>
 #include <itkVersion.h>
@@ -35,7 +38,7 @@ FileList getTestImagesInDir (std::string dir)
 
     for (unsigned i = 0; i < directory->GetNumberOfFiles(); i++) {
         std::string filename(directory->GetFile(i));
-        if (filename.find(".vtk") != std::string::npos || filename.find(".mhd") != std::string::npos)
+        if (filename.find(".vtk") != std::string::npos || filename.find(".mha") != std::string::npos)
             files.push_back(filename);
     }
 
@@ -43,11 +46,40 @@ FileList getTestImagesInDir (std::string dir)
 }
 
 
+void writeBinaryImage(BinaryImageType* image, const char* filename) {
+    typedef itk::ImageFileWriter<BinaryImageType> WriterType;
+    WriterType::Pointer writer = WriterType::New();
+    writer->SetInput(image);
+    writer->SetFileName(filename);
+    writer->Update();
+}
+
+void writeMesh(MeshType* mesh, const char* filename) {
+    typedef itk::MeshFileWriter<MeshType> WriterType;
+    WriterType::Pointer writer = WriterType::New();
+    writer->SetInput(mesh);
+    writer->SetFileName(filename);
+    writer->Update();
+}
+
+
+
+
 BinaryImageType::Pointer readBinaryImage(const std::string& filename) {
     ImageReaderType::Pointer reader = ImageReaderType::New();
     reader->SetFileName(filename.c_str());
     reader->Update();
-    BinaryImageType::Pointer img = reader->GetOutput();
+
+    // we make sure that the image really has value 0 and 1
+    typedef itk::BinaryThresholdImageFilter<BinaryImageType, BinaryImageType> ThresholdFilterType;
+    ThresholdFilterType::Pointer thresholdFilter = ThresholdFilterType::New();
+    thresholdFilter->SetInsideValue(1);
+    thresholdFilter->SetOutsideValue(0);
+    thresholdFilter->SetLowerThreshold(1);
+    thresholdFilter->SetUpperThreshold(255);
+    thresholdFilter->SetInput(reader->GetOutput());
+    thresholdFilter->Update();
+    BinaryImageType::Pointer img = thresholdFilter->GetOutput();
     img->DisconnectPipeline();
     return img;
 }
@@ -103,6 +135,7 @@ MeshType::Pointer binaryImageToMesh(BinaryImageType* testImage) {
     typedef itk::BinaryMask3DMeshSource< BinaryImageType, MeshType > MeshSourceType;
     MeshSourceType::Pointer meshSource = MeshSourceType::New();
 
+
     meshSource->SetObjectValue( 1 );
     meshSource->SetInput( testImage );
     try
@@ -119,7 +152,8 @@ MeshType::Pointer binaryImageToMesh(BinaryImageType* testImage) {
 double computeEuclideanPointDist(MeshType::PointType pt1, MeshType::PointType pt2) {
     double sumSquares = 0;
     for (unsigned i = 0; i < Dimensions; i++)  {
-        sumSquares += (pt1[i] - pt2[i]) * (pt1[i] - pt2[i]);
+        double dist = pt1[i] - pt2[i];
+        sumSquares += dist * dist;
     }
     return std::sqrt(sumSquares);
 }
