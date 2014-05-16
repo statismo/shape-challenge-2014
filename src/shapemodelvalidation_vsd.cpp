@@ -17,7 +17,7 @@
 #include <string>
 #include <list>
 #include "logger.h"
-
+#include "config.h"
 
 void writeResult(const char* resultfile, unsigned objId, const char* modelFn, unsigned errorCode, const std::string& errorMsg, const GeneralizationResult& gndummy, float specificity, float compactness) {
     std::ofstream resFile(resultfile);
@@ -80,7 +80,7 @@ int main(int argc, char* argv[]) {
         GeneralizationResult generalizationScore = generalization(logger, model, testImages);
         logger.Get(logINFO) << "generalizationScore: avg = " << generalizationScore.averageDistance << " hd = " << generalizationScore.hausdorffDistance << std::endl;
 
-        float specificityValue = specificity(logger, model, 1000);
+        float specificityValue = specificity(logger, model, ConfigParameters::numSamplesForSpecificityComputations);
         logger.Get(logINFO) << "specificity value: " << specificityValue << std::endl;
 
         float compactnessScore = compactness(logger, model);

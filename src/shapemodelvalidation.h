@@ -50,4 +50,7 @@ DistanceImageType::Pointer binaryImageToDistanceImage(BinaryImageType::Pointer b
 FileList getTestImagesInDir (std::string dir);
 BinaryImageType::Pointer readBinaryImage(const std::string& filename);
 
+void writeBinaryImage(BinaryImageType* image, const char* filename);
+void writeMesh(MeshType* mesh, const char* filename);
+
 #endif 

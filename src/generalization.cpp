@@ -16,6 +16,7 @@
 #include "itkMeanSquaresPointSetToImageMetric.h"
 #include "itkLinearInterpolateImageFunction.h"
 #include "itkLBFGSOptimizer.h"
+#include "itkRegularStepGradientDescentOptimizer.h"
 #include "itkPointSetToImageRegistrationMethod.h"
 #include "itkCommand.h"
 #include "itkMesh.h"
@@ -25,7 +26,7 @@
 #include "itkRigid3DTransform.h"
 #include "itkVersorRigid3DTransform.h"
 #include "itkCompositeTransform.h"
-#include "itkCenteredTransformInitializer.h"
+#include "itkCenteredVersorTransformInitializer.h"
 #include "itkHausdorffDistanceImageFilter.h"
 #include "itkContourMeanDistanceImageFilter.h"
 #include "itkIdentityTransform.h"
@@ -78,8 +79,8 @@ BinaryImageType::Pointer resizeToImage(BinaryImageType::Pointer refImage, Binary
 
 
 
-typedef itk::LBFGSOptimizer OptimizerType;
 
+template<class OptimizerType>
 class IterationStatusObserver : public itk::Command
 {
 public:
@@ -107,7 +108,7 @@ public:
     }
 
     if (m_logger != 0) {
-        m_logger->Get(logINFO) << "Iteration: " << ++m_iter_no << "  value " <<  optimizer->GetCachedValue() << std::endl; //<< "model arameters " << optimizer->GetCachedCurrentPosition() << std::endl;
+       m_logger->Get(logINFO) << "Iteration: " << ++m_iter_no << "  value " <<  optimizer->GetValue() << "model parameters " << optimizer->GetCurrentPosition() << std::endl;
     }
   }
 
@@ -133,12 +134,13 @@ MeshType::Pointer fitModelToTestImage(Logger& logger, StatisticalModelType::Poin
 	typedef itk::Point<double, 3> PointType;
 	typedef itk::MeanSquaresPointSetToImageMetric<PointSetType, DistanceImageType> MetricType;
 	typedef itk::PointSetToImageRegistrationMethod<PointSetType, DistanceImageType> RegistrationFilterType;
-	typedef itk::LBFGSOptimizer OptimizerType;
+    //typedef itk::LBFGSOptimizer OptimizerType;
+    typedef itk::RegularStepGradientDescentOptimizer OptimizerType;
 	typedef itk::LinearInterpolateImageFunction<DistanceImageType, double> InterpolatorType;
-	typedef itk::VersorRigid3DTransform<double> RigidTransformType;
+    typedef itk::VersorRigid3DTransform<double> RigidTransformType;
 	typedef itk::CompositeTransform<double, 3> CompositeTransformType;
-	typedef itk::TransformMeshFilter<MeshType, MeshType, CompositeTransformType> TransformMeshFilterType;
-	typedef itk::CenteredTransformInitializer<RigidTransformType, BinaryImageType, BinaryImageType> TransformInitializerType;
+    typedef itk::TransformMeshFilter<MeshType, MeshType, CompositeTransformType > TransformMeshFilterType;
+    typedef itk::CenteredVersorTransformInitializer<BinaryImageType, BinaryImageType> TransformInitializerType;
 	typedef itk::StatisticalShapeModelTransform<MeshType, double, Dimensions> StatisticalModelTransformType;
 
 
@@ -146,13 +148,14 @@ MeshType::Pointer fitModelToTestImage(Logger& logger, StatisticalModelType::Poin
     unsigned meanImageResolution = 256;
 
 	// we compute a binary image of the model mean to use it for initialization of the shape 
-    BinaryImageType::Pointer meanAsBinImage = meshToBinaryImage(model->DrawMean(), meanImageResolution, meanImageMargin);
-
+    BinaryImageType::Pointer refAsBinImage = meshToBinaryImage(model->GetRepresenter()->GetReference(), meanImageResolution, meanImageMargin);
 	RigidTransformType::Pointer rigidTransform = RigidTransformType::New();
 	TransformInitializerType::Pointer initializer = TransformInitializerType::New();
-	initializer->SetFixedImage(meanAsBinImage);
+    initializer->SetFixedImage(refAsBinImage);
 	initializer->SetMovingImage(testImage);
 	initializer->SetTransform(rigidTransform);
+    initializer->ComputeRotationOn();
+    initializer->MomentsOn();
 	initializer->InitializeTransform();
 
 	StatisticalModelTransformType::Pointer statModelTransform = StatisticalModelTransformType::New();
@@ -166,9 +169,11 @@ MeshType::Pointer fitModelToTestImage(Logger& logger, StatisticalModelType::Poin
 	transform->SetAllTransformsToOptimizeOn(); // optimize shape and pose parameters
 
 	// Setting up the fitting
-	OptimizerType::Pointer optimizer = OptimizerType::New();
-	optimizer->SetMaximumNumberOfFunctionEvaluations(FittingConfigParameters::maxNumberOfIterations);
-	optimizer->MinimizeOn();
+    OptimizerType::Pointer optimizer = OptimizerType::New();
+    optimizer->SetMaximumStepLength(FittingConfigParameters::maxStepLength);
+    optimizer->MinimizeOn();
+    optimizer->SetNumberOfIterations(FittingConfigParameters::maxNumberOfIterations);
+
 
 	unsigned numStatmodelParameters = statModelTransform->GetNumberOfParameters();
 	unsigned totalNumParameters = rigidTransform->GetNumberOfParameters() + numStatmodelParameters;
@@ -190,7 +195,7 @@ MeshType::Pointer fitModelToTestImage(Logger& logger, StatisticalModelType::Poin
 
 
 	// set up the observer to keep track of the progress
-	typedef IterationStatusObserver ObserverType;
+    typedef IterationStatusObserver<OptimizerType> ObserverType;
 	ObserverType::Pointer observer = ObserverType::New();
     observer->SetLogger(logger);
 	optimizer->AddObserver( itk::IterationEvent(), observer );
@@ -234,8 +239,9 @@ MeshType::Pointer fitModelToTestImage(Logger& logger, StatisticalModelType::Poin
 
 	TransformMeshFilterType::Pointer transformMeshFilter = TransformMeshFilterType::New();
 	transformMeshFilter->SetInput(model->GetRepresenter()->GetReference());
-	transformMeshFilter->SetTransform(transform);
+    transformMeshFilter->SetTransform(transform);
 	transformMeshFilter->Update();
+
 	return transformMeshFilter->GetOutput();
 }
 
