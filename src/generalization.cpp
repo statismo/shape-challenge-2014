@@ -44,7 +44,9 @@ GeneralizationResult generalization(Logger& logger, StatisticalModelType::Pointe
 	unsigned numTestImages = testImages.size();
 
 	for (TestImageList::const_iterator it = testImages.begin(); it != testImages.end(); ++it) { 
-		BinaryImageType::Pointer testImage = *it;
+        std::string filename = it->first;
+        logger.Get(logINFO) << "fitting image " << filename << std::endl;
+        BinaryImageType::Pointer testImage = it->second;
         MeshType::Pointer fittedMesh = fitModelToTestImage(logger, model, testImage);
 		
         MeshType::Pointer testMesh = binaryImageToMesh(testImage);

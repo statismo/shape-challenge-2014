@@ -38,7 +38,7 @@ int main(int argc, char* argv[]) {
             std::string filename = std::string(testdatadir) +"/" + *it;
             logger.Get(logINFO) << "reading image " << filename << std::endl;
             BinaryImageType::Pointer testImage = readBinaryImage(filename);
-			testImages.push_back(testImage);
+            testImages.push_back(std::make_pair(filename, testImage));
 		}
 
 		logger.Get(logINFO) << "Reading statistical model " << modelFn << std::endl;

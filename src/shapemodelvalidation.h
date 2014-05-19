@@ -24,7 +24,7 @@ typedef itk::StandardMeshRepresenter<float, Dimensions> RepresenterType;
 typedef itk::StatisticalModel<MeshType> StatisticalModelType;
 typedef itk::Image<unsigned char, 3> BinaryImageType;
 typedef itk::Image<float, 3> DistanceImageType;
-typedef std::list<BinaryImageType::Pointer> TestImageList;
+typedef std::list<std::pair<std::string, BinaryImageType::Pointer> > TestImageList;
 typedef std::list<std::string> FileList;
 
 // holds the result for the two generalization metrics
