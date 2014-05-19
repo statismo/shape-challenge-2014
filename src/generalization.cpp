@@ -156,8 +156,8 @@ MeshType::Pointer fitModelToTestImage(Logger& logger, StatisticalModelType::Poin
     initializer->SetFixedImage(refAsBinImage);
 	initializer->SetMovingImage(testImage);
 	initializer->SetTransform(rigidTransform);
-    initializer->ComputeRotationOn();
-    initializer->MomentsOn();
+    initializer->ComputeRotationOff();
+    //initializer->MomentsOn();
 	initializer->InitializeTransform();
 
 	StatisticalModelTransformType::Pointer statModelTransform = StatisticalModelTransformType::New();
