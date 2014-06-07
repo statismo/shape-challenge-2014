@@ -49,7 +49,12 @@ int main(int argc, char* argv[]) {
         GeneralizationResult generalizationScore = generalization(logger, model, testMeshes);
 		logger.Get(logINFO) << "generalizationScore: avg = " << generalizationScore.averageDistance << " hd = " << generalizationScore.hausdorffDistance << std::endl;
 
-        float specificityValue = specificity(logger, model, trainingMeshes, ConfigParameters::numSamplesForSpecificityComputations);
+
+        MeshDataList allMeshes;
+        allMeshes.insert(allMeshes.end(), trainingMeshes.begin(), trainingMeshes.end());
+        allMeshes.insert(allMeshes.end(), testMeshes.begin(), testMeshes.end());
+
+        float specificityValue = specificity(logger, model, allMeshes, ConfigParameters::numSamplesForSpecificityComputations);
 		logger.Get(logINFO) << "specificity value: " << specificityValue << std::endl;
     
         float compactnessScore = compactness(logger, model);

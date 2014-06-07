@@ -16,7 +16,9 @@
 #include "logger.h"
 
 
-// Common definitions
+
+
+// Some Common definitions
 const unsigned Dimensions = 3;
 typedef itk::Mesh<float, Dimensions > MeshType;
 typedef MeshType::PointType PointType;	
@@ -42,13 +44,17 @@ float specificity(Logger& logger, StatisticalModelType::Pointer model, const Mes
 float compactness(Logger& logger, StatisticalModelType::Pointer model);
 
 
-// some commonly used helper functions
-MeshType::Pointer establishCorrespondenceAndAlignImage(Logger& logger, StatisticalModelType::Pointer model, BinaryImageType::Pointer image);
-MeshDataList establishCorrespondenceAndAlignImages(Logger& logger, StatisticalModelType::Pointer model, const ImageDataList& images);
-
+// functions to compute the discances
 double computeAverageDistance(MeshType::Pointer mesh1, MeshType::Pointer mesh2, unsigned numberOfSamplingPoints);
 double computeSymmetricAverageDistance(MeshType::Pointer mesh1, MeshType::Pointer mesh2, unsigned numberOfSamplingPoints);
 double computeHausdorffDistance(MeshType::Pointer mesh1, MeshType::Pointer mesh2, unsigned numberOfSamplingPoints);
+
+
+// functions to establish correspondences between model and an image.
+MeshType::Pointer establishCorrespondenceAndAlignImage(Logger& logger, StatisticalModelType::Pointer model, BinaryImageType::Pointer image);
+MeshDataList establishCorrespondenceAndAlignImages(Logger& logger, StatisticalModelType::Pointer model, const ImageDataList& images);
+
+// commonly used helper functions
 BinaryImageType::Pointer meshToBinaryImage(MeshType::Pointer mesh, unsigned imageResolution, double imageMargin);
 MeshType::Pointer binaryImageToMesh(BinaryImageType* testImage);
 DistanceImageType::Pointer binaryImageToDistanceImage(BinaryImageType::Pointer binaryImage);
@@ -57,6 +63,5 @@ BinaryImageType::Pointer readBinaryImage(const std::string& filename);
 MeshType::Pointer cloneMesh(const MeshType* mesh);
 void writeBinaryImage(BinaryImageType* image, const char* filename);
 void writeMesh(MeshType* mesh, const char* filename);
-MeshDataList readAndPrepareData(Logger& logger, const std::string dirname, StatisticalModelType::Pointer model);
 
 #endif 

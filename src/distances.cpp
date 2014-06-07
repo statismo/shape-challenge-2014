@@ -34,6 +34,7 @@ std::vector<double> computeDistances(MeshType::Pointer mesh1, MeshType::Pointer 
 
 
     // we assume that the mesh points are approximately uniformely distributed.
+    // TODO replace with a real uniform sampling
 
     std::vector<double> distanceValues;
 

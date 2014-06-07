@@ -53,12 +53,13 @@ int main(int argc, char* argv[]) {
 
     unsigned int objId = static_cast<unsigned>(atoi(argv[1]));
     char* modelFn = argv[2];
-    char* testdatadir = argv[3];
+    //char* testdatadir = argv[3];
     char* resultfile = argv[4];
     char* logfile = argv[5];
 
 
     // TODO this will be replaced after the challenge, but we don't want to break the interface now
+    std::string testdatadir="./testdata";
     std::string trainingdatadir="./trainingdata";
 
     try {
@@ -79,7 +80,13 @@ int main(int argc, char* argv[]) {
         GeneralizationResult generalizationScore = generalization(logger, model, testMeshes);
         logger.Get(logINFO) << "generalizationScore: avg = " << generalizationScore.averageDistance << " hd = " << generalizationScore.hausdorffDistance << std::endl;
 
-        float specificityValue = specificity(logger, model, testMeshes, ConfigParameters::numSamplesForSpecificityComputations);
+
+        MeshDataList allMeshes;
+        allMeshes.insert(allMeshes.end(), trainingMeshes.begin(), trainingMeshes.end());
+        allMeshes.insert(allMeshes.end(), testMeshes.begin(), testMeshes.end());
+
+
+        float specificityValue = specificity(logger, model, allMeshes, ConfigParameters::numSamplesForSpecificityComputations);
         logger.Get(logINFO) << "specificity value: " << specificityValue << std::endl;
 
         float compactnessScore = compactness(logger, model);

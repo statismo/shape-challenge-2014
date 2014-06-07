@@ -1,3 +1,10 @@
+/*
+* Created by Marcel Luethi
+* Copyright (c) 2011 University of Basel
+*
+* Licensed under the BSD, 3-Clause license
+*
+**/
 
 #include "shapemodelvalidation.h"
 #include "config.h"
@@ -27,7 +34,6 @@
 #include <itkPointsLocator.h>
 
 
-// TODO this needs to be a similarity transform
 typedef itk::Similarity3DTransform<double> SimilarityTransformType;
 typedef std::pair<MeshType::Pointer, SimilarityTransformType::Pointer> FittingResultType;
 
@@ -35,6 +41,9 @@ typedef std::pair<MeshType::Pointer, SimilarityTransformType::Pointer> FittingRe
 FittingResultType fitModelToTestImage(Logger& logger, StatisticalModelType::Pointer model, BinaryImageType::Pointer testImage);
 
 
+/*
+ * Returns a new mesh with each vertex of the mesh projected to its closet point on the target
+ */
 MeshType::Pointer projectMesh(MeshType::Pointer mesh, MeshType::Pointer target) {
 #if (ITK_VERSION_MAJOR == 4 && ITK_VERSION_MINOR >= 4)
     typedef itk::PointsLocator< MeshType::PointsContainer > PointsLocatorType;
@@ -57,26 +66,36 @@ MeshType::Pointer projectMesh(MeshType::Pointer mesh, MeshType::Pointer target) 
     return projectedMesh;
 }
 
+/*
+ * Returns a mesh representation of the shape encoded in the test image, which is in correspondence with the model. Furthermore, the
+ * pose and scale of the mesh are adjusted to the model
+ */
 MeshType::Pointer establishCorrespondenceAndAlignImage(Logger& logger, StatisticalModelType::Pointer model, BinaryImageType::Pointer testImage) {
 
     FittingResultType fittedMeshAndTransform = fitModelToTestImage(logger, model, testImage);
 
     MeshType::Pointer testMesh = binaryImageToMesh(testImage);
+
+    // we align the mesh to the model (i.e. correct pose and scale)
     typedef itk::TransformMeshFilter<MeshType, MeshType, itk::Transform<double, 3> > TransformMeshFilterType;
     TransformMeshFilterType::Pointer transformMeshFilter = TransformMeshFilterType::New();
-    transformMeshFilter->SetInput(testMesh);
+    transformMeshFilter->SetInput(testMesh);   
     itk::Transform<double, 3>::Pointer inverseTransform = fittedMeshAndTransform.second->GetInverseTransform();
     transformMeshFilter->SetTransform(inverseTransform);
     transformMeshFilter->Update();
     MeshType::Pointer alignedTestMesh = transformMeshFilter->GetOutput();
-    MeshType::Pointer testMeshInCorrespondence = projectMesh(fittedMeshAndTransform.first, alignedTestMesh);
+
+    MeshType::Pointer fittedMesh = fittedMeshAndTransform.first;
+    MeshType::Pointer testMeshInCorrespondence = projectMesh(fittedMesh, alignedTestMesh);
     return testMeshInCorrespondence;
 
 }
 
 
 
-
+/*
+ * Establishes correspondence for each image in a list (see establishCorrespondenceAndAlignImage for details)
+ */
 MeshDataList establishCorrespondenceAndAlignImages(Logger& logger, StatisticalModelType::Pointer model, const ImageDataList& images) {
     MeshDataList alignedMeshes;
 
@@ -90,6 +109,7 @@ MeshDataList establishCorrespondenceAndAlignImages(Logger& logger, StatisticalMo
 }
 
 
+// Helper class needed by ITK to be able to log the status of the fittign in each iteration
 template<class OptimizerType>
 class IterationStatusObserver : public itk::Command
 {
@@ -136,7 +156,7 @@ private:
 };
 
 
-// TODO add scale computation
+// Fits a model to the given test image.
 FittingResultType fitModelToTestImage(Logger& logger, StatisticalModelType::Pointer model, BinaryImageType::Pointer testImage)
 {
     const unsigned Dimensions = 3;
@@ -177,13 +197,13 @@ FittingResultType fitModelToTestImage(Logger& logger, StatisticalModelType::Poin
 
     // Setting up the fitting
     OptimizerType::Pointer optimizer = OptimizerType::New();
-    optimizer->SetDefaultStepLength(FittingConfigParameters::maxStepLength);
+    optimizer->SetDefaultStepLength(FittingConfigParameters::defaultStepLength);
     //optimizer->SetMaximumStepLength(FittingConfigParameters::maxStepLength);
     optimizer->MinimizeOn();
     //optimizer->SetNumberOfIterations(FittingConfigParameters::maxNumberOfIterations);
     optimizer->SetMaximumNumberOfFunctionEvaluations(FittingConfigParameters::maxNumberOfIterations);
-    optimizer->SetGradientConvergenceTolerance(1e-18);
-    optimizer->SetLineSearchAccuracy(0.1);
+    optimizer->SetGradientConvergenceTolerance(FittingConfigParameters::gradientConvergenceTolerance);
+    optimizer->SetLineSearchAccuracy(FittingConfigParameters::lineSearchAccuracy);
     // set the scales of the optimizer, to compensate for potentially different scales of translation, rotation and shape parameters
     OptimizerType::ScalesType scales( similarityTransform->GetNumberOfParameters() );
     for (unsigned i = 0; i < 3; i++) {
@@ -276,7 +296,7 @@ FittingResultType fitModelToTestImage(Logger& logger, StatisticalModelType::Poin
 
 
     try {
-        logger.Get(logINFO) << "starting model fitting" << std::endl;
+        logger.Get(logINFO) << "starting model full fitting" << std::endl;
         registration->Update();
     } catch ( itk::ExceptionObject& o ) {
         logger.Get(logINFO) << "caught exception " << o << std::endl;

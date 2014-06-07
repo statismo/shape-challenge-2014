@@ -11,6 +11,8 @@
 #define __CONFIG_H
 
 
+
+// This class holds general configuration parameters
 struct ConfigParameters {
  static const unsigned numSamplesForSpecificityComputations;
  static const unsigned numSamplingPointsSpecificity;
@@ -18,12 +20,14 @@ struct ConfigParameters {
 };
 
 
-
+// This class holds all parameters related to the model fitting
 class FittingConfigParameters {
 public:
 // Some configuration parameters
 static const short maxNumberOfIterations; // the maximum number of iterations to use in the optimization
-static const double maxStepLength; // the maximum number of iterations to use in the optimization
+static const double defaultStepLength; // the maximum number of iterations to use in the optimization
+static const double gradientConvergenceTolerance;
+static const double lineSearchAccuracy;
 static const double translationScale; // dynamic range of translations
 static const double rotationScale; // dynamic range of rotations
 static const double scalingScale; // dynamic range of rotations

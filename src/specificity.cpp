@@ -11,20 +11,16 @@
 #include "config.h"
 
 #include <string>
-#include <itkLinearInterpolateImageFunction.h>
 #include <itkImage.h>
 #include "itkMeshFileWriter.h"
 
-typedef itk::LinearInterpolateImageFunction<DistanceImageType> InterpolatorType;
 
-double l2DistToTrainingImage(DistanceImageType::Pointer trainingDistImage, MeshType::Pointer sample);
-
-float specificity(Logger& logger, StatisticalModelType::Pointer model, const MeshDataList& testMeshes, unsigned numberOfShapes) {
+float specificity(Logger& logger, StatisticalModelType::Pointer model, const MeshDataList& testMeshes, unsigned numberOfSamples) {
 
 
 	// draw a number of samples and compute its distance to the closest training dataset
     double accumulatedDistToClosestTrainingShape = 0;
-    for (unsigned i = 0; i < numberOfShapes; i++) {
+    for (unsigned i = 0; i < numberOfSamples; i++) {
         MeshType::Pointer sample = model->DrawSample();
 
         double minDist = std::numeric_limits<double>::max();
@@ -40,7 +36,7 @@ float specificity(Logger& logger, StatisticalModelType::Pointer model, const Mes
 
         accumulatedDistToClosestTrainingShape += minDist;
     }
-    double avgDist = accumulatedDistToClosestTrainingShape / numberOfShapes;
+    double avgDist = accumulatedDistToClosestTrainingShape / numberOfSamples;
     logger.Get(logINFO) << "average distance " << avgDist << std::endl;
     return avgDist;
 }

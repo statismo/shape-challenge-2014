@@ -44,21 +44,24 @@ GeneralizationResult generalization(Logger& logger, StatisticalModelType::Pointe
 
     for (MeshDataList::const_iterator it = testMeshes.begin(); it != testMeshes.end(); ++it) {
         std::string filename = it->second;
-        logger.Get(logINFO) << "fitting image " << filename << std::endl;
+        logger.Get(logINFO) << "computing best reconstruction " << filename << std::endl;
         MeshType::Pointer testMesh = it->first;
-        MeshType::Pointer fittedMesh = model->DrawSample(model->ComputeCoefficientsForSample(testMesh));
+
+        // project test mesh into model
+        MeshType::Pointer bestReconstruction = model->DrawSample(model->ComputeCoefficientsForSample(testMesh));
         std::ostringstream pos;
         unsigned id = std::distance(it, testMeshes.begin());
+
+#ifdef DEBUG
         pos << "/tmp/projected/" << "projected-" << id << ".vtk";
         writeMesh(testMesh, pos.str().c_str());
-
         std::ostringstream fos;
         fos << "/tmp/fitted/" << "fitted-" << id << ".vtk";
         writeMesh(fittedMesh, fos.str().c_str());
-
-        double avgDistance = computeSymmetricAverageDistance(testMesh,  fittedMesh, ConfigParameters::numSamplingPointsGeneralization);
+#endif
+        double avgDistance = computeSymmetricAverageDistance(testMesh,  bestReconstruction, ConfigParameters::numSamplingPointsGeneralization);
         totalAvgDistance += avgDistance;
-        double hdDistance = computeHausdorffDistance(testMesh, fittedMesh, ConfigParameters::numSamplingPointsGeneralization);
+        double hdDistance = computeHausdorffDistance(testMesh, bestReconstruction, ConfigParameters::numSamplingPointsGeneralization);
         totalHdDistance += hdDistance;
 
         logger.Get(logINFO) << "avg distance " << avgDistance << std::endl;
