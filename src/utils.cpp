@@ -25,25 +25,12 @@
 #include <vnl/vnl_random.h>
 #include <algorithm>
 #include <numeric>
+#include <itkTransformMeshFilter.h>
+#include <itkIdentityTransform.h>
 
 typedef std::list<std::string> FileList;
 typedef itk::ImageFileReader<BinaryImageType> ImageReaderType;
 
-FileList getTestImagesInDir (std::string dir)
-{
-    FileList files;
-
-    itk::Directory::Pointer directory = itk::Directory::New();
-    directory->Load(dir.c_str());
-
-    for (unsigned i = 0; i < directory->GetNumberOfFiles(); i++) {
-        std::string filename(directory->GetFile(i));
-        if (filename.find(".vtk") != std::string::npos || filename.find(".mha") != std::string::npos)
-            files.push_back(filename);
-    }
-
-    return files;
-}
 
 
 void writeBinaryImage(BinaryImageType* image, const char* filename) {
@@ -82,6 +69,50 @@ BinaryImageType::Pointer readBinaryImage(const std::string& filename) {
     BinaryImageType::Pointer img = thresholdFilter->GetOutput();
     img->DisconnectPipeline();
     return img;
+}
+
+
+ImageDataList getImagesInDir (Logger& logger, std::string dirname)
+{
+    ImageDataList images;
+
+    itk::Directory::Pointer directory = itk::Directory::New();
+    directory->Load(dirname.c_str());
+
+    for (unsigned i = 0; i < directory->GetNumberOfFiles(); i++) {
+        std::string filename(directory->GetFile(i));
+        if (filename.find(".vtk") != std::string::npos || filename.find(".mha") != std::string::npos) {
+            std::string fullpath = std::string(dirname) +"/" + filename;
+            logger.Get(logINFO) << "reading image " << fullpath << std::endl;
+            BinaryImageType::Pointer image = readBinaryImage(fullpath);
+            images.push_back(std::make_pair(image, fullpath));
+        }
+    }
+
+    return images;
+}
+
+
+
+
+
+MeshType::Pointer cloneMesh(const MeshType* mesh) {
+
+    // cloning is cumbersome - therefore we let itk do the job for, and use perform a
+    // Mesh transform using the identity transform. This should result in a perfect clone.
+
+    typedef itk::IdentityTransform<MeshType::PixelType, 3> IdentityTransformType;
+    typedef itk::TransformMeshFilter<MeshType, MeshType, IdentityTransformType> TransformMeshFilterType;
+
+    typename TransformMeshFilterType::Pointer tf = TransformMeshFilterType::New();
+    tf->SetInput(mesh);
+    typename IdentityTransformType::Pointer idTrans = IdentityTransformType::New();
+    tf->SetTransform(idTrans);
+    tf->Update();
+
+    typename MeshType::Pointer clone = tf->GetOutput();
+    clone->DisconnectPipeline();
+    return clone;
 }
 
 
@@ -148,70 +179,4 @@ MeshType::Pointer binaryImageToMesh(BinaryImageType* testImage) {
     }
     return meshSource->GetOutput();
 }
-
-double computeEuclideanPointDist(MeshType::PointType pt1, MeshType::PointType pt2) {
-    double sumSquares = 0;
-    for (unsigned i = 0; i < Dimensions; i++)  {
-        double dist = pt1[i] - pt2[i];
-        sumSquares += dist * dist;
-    }
-    return std::sqrt(sumSquares);
-}
-
-
-std::vector<double> computeDistances(MeshType::Pointer mesh1, MeshType::Pointer mesh2, unsigned numberOfSamplingPoints) {
-
-    #if (ITK_VERSION_MAJOR == 4 && ITK_VERSION_MINOR >= 4)
-    typedef itk::PointsLocator< MeshType::PointsContainer > PointsLocatorType;
-    #else
-    typedef itk::PointsLocator<int, 3, double, MeshType::PointsContainer > PointsLocatorType;
-    #endif
-
-    PointsLocatorType::Pointer ptLocator = PointsLocatorType::New();
-    ptLocator->SetPoints(mesh2->GetPoints());
-    ptLocator->Initialize();
-
-
-    // we assume that the mesh points are approximately uniformely distributed.
-
-    std::vector<double> distanceValues;
-
-    double totalDist = 0;
-    vnl_random randGen;
-
-    for (unsigned i = 0; i < numberOfSamplingPoints; i++) {
-        unsigned ptId = randGen.lrand32(mesh1->GetNumberOfPoints() - 1);
-
-        MeshType::PointType sourcePt = mesh1->GetPoint(ptId);
-        int closestPointId = ptLocator->FindClosestPoint(sourcePt);
-        MeshType::PointType targetPt = mesh2->GetPoint(closestPointId);
-        distanceValues.push_back(computeEuclideanPointDist(sourcePt, targetPt));
-    }
-    return distanceValues;
-}
-
-
-double computeAverageDistance(MeshType::Pointer mesh1, MeshType::Pointer mesh2, unsigned numberOfSamplingPoints) {
-    std::vector<double> distanceValues = computeDistances(mesh1, mesh2, numberOfSamplingPoints);
-    return std::accumulate(distanceValues.begin(), distanceValues.end(), 0.0) / numberOfSamplingPoints;
-}
-
-double computeSymmetricAverageDistance(MeshType::Pointer mesh1, MeshType::Pointer mesh2, unsigned numberOfSamplingPoints) {
-    double dist1 = computeAverageDistance(mesh1, mesh2, numberOfSamplingPoints);
-    double dist2 = computeAverageDistance(mesh2, mesh1, numberOfSamplingPoints);
-    return (dist1 + dist2) / 2;
-}
-
-
-double computeHausdorffDistance(MeshType::Pointer mesh1, MeshType::Pointer mesh2, unsigned numberOfSamplingPoints) {
-
-    std::vector<double> distanceValues1 = computeDistances(mesh1, mesh2, numberOfSamplingPoints);
-    std::vector<double> distanceValues2 = computeDistances(mesh2, mesh1, numberOfSamplingPoints);
-
-    std::vector<double>::iterator maxElemIt1 = std::max_element(distanceValues1.begin(), distanceValues1.end());
-    std::vector<double>::iterator maxElemIt2 = std::max_element(distanceValues2.begin(), distanceValues2.end());
-
-    return  std::max(*maxElemIt1, *maxElemIt2);
-}
-
 

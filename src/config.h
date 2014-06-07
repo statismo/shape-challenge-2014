@@ -26,6 +26,7 @@ static const short maxNumberOfIterations; // the maximum number of iterations to
 static const double maxStepLength; // the maximum number of iterations to use in the optimization
 static const double translationScale; // dynamic range of translations
 static const double rotationScale; // dynamic range of rotations
+static const double scalingScale; // dynamic range of rotations
 static const double smScale; // dynamic range of statistical model parameters
 };
 

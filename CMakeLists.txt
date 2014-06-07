@@ -13,8 +13,10 @@ SET (SOURCE_FILES_COMMON
         src/generalization.cpp
         src/compactness.cpp
         src/specificity.cpp
-        src/common.cpp
+        src/utils.cpp
         src/config.cpp
+        src/correspondence.cpp
+        src/distances.cpp
 )
 SET (SOURCE_FILES_CONSOLE
 	src/shapemodelvalidation.cpp 

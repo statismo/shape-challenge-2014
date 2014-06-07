@@ -24,8 +24,9 @@ typedef itk::StandardMeshRepresenter<float, Dimensions> RepresenterType;
 typedef itk::StatisticalModel<MeshType> StatisticalModelType;
 typedef itk::Image<unsigned char, 3> BinaryImageType;
 typedef itk::Image<float, 3> DistanceImageType;
-typedef std::list<std::pair<std::string, BinaryImageType::Pointer> > TestImageList;
-typedef std::list<std::string> FileList;
+typedef std::list<std::pair<MeshType::Pointer, std::string> > MeshDataList;
+typedef std::list<std::pair<BinaryImageType::Pointer, std::string> > ImageDataList;
+
 
 // holds the result for the two generalization metrics
 struct GeneralizationResult { 
@@ -36,21 +37,26 @@ struct GeneralizationResult {
 };
 
 // the main validation functions
-GeneralizationResult generalization(Logger& logger, StatisticalModelType::Pointer model, const TestImageList& testImages);
-float specificity(Logger& logger, StatisticalModelType::Pointer model, unsigned numberOfShapes);
+GeneralizationResult generalization(Logger& logger, StatisticalModelType::Pointer model, const MeshDataList& testImages);
+float specificity(Logger& logger, StatisticalModelType::Pointer model, const MeshDataList& testMeshes, unsigned numberOfShapes);
 float compactness(Logger& logger, StatisticalModelType::Pointer model);
 
+
 // some commonly used helper functions
+MeshType::Pointer establishCorrespondenceAndAlignImage(Logger& logger, StatisticalModelType::Pointer model, BinaryImageType::Pointer image);
+MeshDataList establishCorrespondenceAndAlignImages(Logger& logger, StatisticalModelType::Pointer model, const ImageDataList& images);
+
 double computeAverageDistance(MeshType::Pointer mesh1, MeshType::Pointer mesh2, unsigned numberOfSamplingPoints);
 double computeSymmetricAverageDistance(MeshType::Pointer mesh1, MeshType::Pointer mesh2, unsigned numberOfSamplingPoints);
 double computeHausdorffDistance(MeshType::Pointer mesh1, MeshType::Pointer mesh2, unsigned numberOfSamplingPoints);
 BinaryImageType::Pointer meshToBinaryImage(MeshType::Pointer mesh, unsigned imageResolution, double imageMargin);
 MeshType::Pointer binaryImageToMesh(BinaryImageType* testImage);
 DistanceImageType::Pointer binaryImageToDistanceImage(BinaryImageType::Pointer binaryImage);
-FileList getTestImagesInDir (std::string dir);
+ImageDataList getImagesInDir (Logger& logger, std::string dir);
 BinaryImageType::Pointer readBinaryImage(const std::string& filename);
-
+MeshType::Pointer cloneMesh(const MeshType* mesh);
 void writeBinaryImage(BinaryImageType* image, const char* filename);
 void writeMesh(MeshType* mesh, const char* filename);
+MeshDataList readAndPrepareData(Logger& logger, const std::string dirname, StatisticalModelType::Pointer model);
 
 #endif 

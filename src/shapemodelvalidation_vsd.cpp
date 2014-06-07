@@ -57,19 +57,13 @@ int main(int argc, char* argv[]) {
     char* resultfile = argv[4];
     char* logfile = argv[5];
 
+
+    // TODO this will be replaced after the challenge, but we don't want to break the interface now
+    std::string trainingdatadir="./trainingdata";
+
     try {
 
         Logger logger(logfile, logDEBUG);
-
-        FileList testfiles = getTestImagesInDir(testdatadir);
-        TestImageList testImages;
-
-        for (FileList::const_iterator it = testfiles.begin(); it != testfiles.end(); ++it) {
-            std::string filename = std::string(testdatadir) +"/" + *it;
-            logger.Get(logINFO) << "reading image " << filename << std::endl;
-            BinaryImageType::Pointer testImage = readBinaryImage(filename);
-            testImages.push_back(std::make_pair(filename, testImage));
-        }
 
         logger.Get(logINFO) << "Reading statistical model " << modelFn << std::endl;
 
@@ -77,10 +71,15 @@ int main(int argc, char* argv[]) {
         StatisticalModelType::Pointer model = StatisticalModelType::New();
         model->Load(representer, modelFn);
 
-        GeneralizationResult generalizationScore = generalization(logger, model, testImages);
+        ImageDataList testImages = getImagesInDir(logger, testdatadir);
+        MeshDataList testMeshes = establishCorrespondenceAndAlignImages(logger, model, testImages);
+        ImageDataList trainingImages = getImagesInDir(logger, trainingdatadir);
+        MeshDataList trainingMeshes = establishCorrespondenceAndAlignImages(logger, model, trainingImages);
+
+        GeneralizationResult generalizationScore = generalization(logger, model, testMeshes);
         logger.Get(logINFO) << "generalizationScore: avg = " << generalizationScore.averageDistance << " hd = " << generalizationScore.hausdorffDistance << std::endl;
 
-        float specificityValue = specificity(logger, model, ConfigParameters::numSamplesForSpecificityComputations);
+        float specificityValue = specificity(logger, model, testMeshes, ConfigParameters::numSamplesForSpecificityComputations);
         logger.Get(logINFO) << "specificity value: " << specificityValue << std::endl;
 
         float compactnessScore = compactness(logger, model);
