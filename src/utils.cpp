@@ -104,13 +104,13 @@ MeshType::Pointer cloneMesh(const MeshType* mesh) {
     typedef itk::IdentityTransform<MeshType::PixelType, 3> IdentityTransformType;
     typedef itk::TransformMeshFilter<MeshType, MeshType, IdentityTransformType> TransformMeshFilterType;
 
-    typename TransformMeshFilterType::Pointer tf = TransformMeshFilterType::New();
+    TransformMeshFilterType::Pointer tf = TransformMeshFilterType::New();
     tf->SetInput(mesh);
-    typename IdentityTransformType::Pointer idTrans = IdentityTransformType::New();
+    IdentityTransformType::Pointer idTrans = IdentityTransformType::New();
     tf->SetTransform(idTrans);
     tf->Update();
 
-    typename MeshType::Pointer clone = tf->GetOutput();
+    MeshType::Pointer clone = tf->GetOutput();
     clone->DisconnectPipeline();
     return clone;
 }

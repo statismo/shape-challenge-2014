@@ -51,8 +51,8 @@ double computeHausdorffDistance(MeshType::Pointer mesh1, MeshType::Pointer mesh2
 
 
 // functions to establish correspondences between model and an image.
-MeshType::Pointer establishCorrespondenceAndAlignImage(Logger& logger, StatisticalModelType::Pointer model, BinaryImageType::Pointer image);
-MeshDataList establishCorrespondenceAndAlignImages(Logger& logger, StatisticalModelType::Pointer model, const ImageDataList& images);
+MeshType::Pointer establishCorrespondenceAndAlignData(Logger& logger, StatisticalModelType::Pointer model, BinaryImageType::Pointer image);
+MeshDataList establishCorrespondenceAndAlignData(Logger& logger, StatisticalModelType::Pointer model, const ImageDataList& images);
 
 // commonly used helper functions
 BinaryImageType::Pointer meshToBinaryImage(MeshType::Pointer mesh, unsigned imageResolution, double imageMargin);

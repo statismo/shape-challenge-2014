@@ -73,9 +73,9 @@ int main(int argc, char* argv[]) {
         model->Load(representer, modelFn);
 
         ImageDataList testImages = getImagesInDir(logger, testdatadir);
-        MeshDataList testMeshes = establishCorrespondenceAndAlignImages(logger, model, testImages);
+        MeshDataList testMeshes = establishCorrespondenceAndAlignData(logger, model, testImages);
         ImageDataList trainingImages = getImagesInDir(logger, trainingdatadir);
-        MeshDataList trainingMeshes = establishCorrespondenceAndAlignImages(logger, model, trainingImages);
+        MeshDataList trainingMeshes = establishCorrespondenceAndAlignData(logger, model, trainingImages);
 
         GeneralizationResult generalizationScore = generalization(logger, model, testMeshes);
         logger.Get(logINFO) << "generalizationScore: avg = " << generalizationScore.averageDistance << " hd = " << generalizationScore.hausdorffDistance << std::endl;

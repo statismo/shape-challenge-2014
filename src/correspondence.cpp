@@ -70,7 +70,7 @@ MeshType::Pointer projectMesh(MeshType::Pointer mesh, MeshType::Pointer target) 
  * Returns a mesh representation of the shape encoded in the test image, which is in correspondence with the model. Furthermore, the
  * pose and scale of the mesh are adjusted to the model
  */
-MeshType::Pointer establishCorrespondenceAndAlignImage(Logger& logger, StatisticalModelType::Pointer model, BinaryImageType::Pointer testImage) {
+MeshType::Pointer establishCorrespondenceAndAlignData(Logger& logger, StatisticalModelType::Pointer model, BinaryImageType::Pointer testImage) {
 
     FittingResultType fittedMeshAndTransform = fitModelToTestImage(logger, model, testImage);
 
@@ -96,12 +96,12 @@ MeshType::Pointer establishCorrespondenceAndAlignImage(Logger& logger, Statistic
 /*
  * Establishes correspondence for each image in a list (see establishCorrespondenceAndAlignImage for details)
  */
-MeshDataList establishCorrespondenceAndAlignImages(Logger& logger, StatisticalModelType::Pointer model, const ImageDataList& images) {
+MeshDataList establishCorrespondenceAndAlignData(Logger& logger, StatisticalModelType::Pointer model, const ImageDataList& images) {
     MeshDataList alignedMeshes;
 
     for (ImageDataList::const_iterator it = images.begin(); it != images.end(); ++it) {
         BinaryImageType::Pointer image  = it->first;
-        MeshType::Pointer alignedMesh = establishCorrespondenceAndAlignImage(logger, model, image);
+        MeshType::Pointer alignedMesh = establishCorrespondenceAndAlignData(logger, model, image);
         std::string filename  = it->second;
         alignedMeshes.push_back(std::make_pair(alignedMesh, filename));
     }
