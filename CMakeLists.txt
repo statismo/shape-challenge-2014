@@ -1,7 +1,8 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
 PROJECT(Shape2014Validation)
 
-FIND_PACKAGE(STATISMO REQUIRED)
+FIND_PACKAGE(statismo REQUIRED)
+include_directories( ${statismo_INCLUDE_DIRS} )
 
 FIND_PACKAGE(ITK REQUIRED)
 include (${ITK_USE_FILE})
@@ -33,7 +34,7 @@ include_directories(${STATISMO_INCLUDE_DIRS} ${ITK_INCLUDE_DIRS}/itkhdf5 ${ITK_I
 link_directories( ${ITK_LIBRARY_DIRS})
 
 add_executable (shapemodelValidation ${SOURCE_FILES_CONSOLE})
-target_link_libraries (shapemodelValidation ${ITK_LIBRARIES})
+target_link_libraries (shapemodelValidation ${statismo_LIBRARIES} ${ITK_LIBRARIES})
 
 add_executable (shapemodelValidationVSD ${SOURCE_FILES_VSD})
-target_link_libraries (shapemodelValidationVSD ${ITK_LIBRARIES})
+target_link_libraries (shapemodelValidationVSD ${statismo_LIBRARIES} ${ITK_LIBRARIES})
