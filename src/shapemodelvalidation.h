@@ -9,8 +9,8 @@
 #ifndef __SHAPE_MODEL_VALIDATION_H
 #define __SHAPE_MODEL_VALIDATION_H
 
-#include "statismo_ITK/itkStatisticalModel.h"
-#include "Representers/ITK/itkStandardMeshRepresenter.h"
+#include "itkStatisticalModel.h"
+#include "itkStandardMeshRepresenter.h"
 #include "itkImage.h"
 #include "itkMesh.h"
 #include "logger.h"

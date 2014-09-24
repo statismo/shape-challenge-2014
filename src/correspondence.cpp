@@ -10,7 +10,7 @@
 #include "config.h"
 
 
-#include "statismo_ITK/itkStatisticalShapeModelTransform.h"
+#include "itkStatisticalShapeModelTransform.h"
 #include "itkMeanSquaresPointSetToImageMetric.h"
 #include "itkLinearInterpolateImageFunction.h"
 #include "itkLBFGSOptimizer.h"
